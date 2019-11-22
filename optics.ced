@@ -1,0 +1,79 @@
+module optics.
+
+id : ∀ A: ★. A ➔ A =
+  Λ A. λ a. a.
+
+const : ∀ A: ★. ∀ B: ★. A ➔ B ➔ A =
+  Λ A. Λ B. λ a. λ b. a.
+
+flip : ∀ A: ★. ∀ B: ★. ∀ C: ★. (A ➔ B ➔ C) ➔ B ➔ A ➔ C =
+  Λ A. Λ B. Λ C. λ f. λ b. λ a. f a b.
+
+Functor : (★ ➔ ★) ➔ ★ =
+  λ F: ★ ➔ ★. ∀ A: ★. ∀ B: ★. (A ➔ B) ➔ F ·A ➔ F ·B.
+
+lift-Function : ∀ A: ★. Functor ·(λ B: ★. A ➔ B) =
+  Λ A. Λ B. Λ C. λ f. λ g. λ a. f (g a).
+
+Identity : ★ ➔ ★ =
+  λ A: ★. A.
+
+lift-Identity : Functor ·Identity =
+  Λ A. Λ B. λ f. f.
+
+Constant : ★ ➔ ★ ➔ ★ =
+  λ A: ★. λ B: ★. A.
+
+lift-Constant : ∀ A: ★. Functor ·(Constant ·A) =
+  Λ A. Λ B. Λ C. λ f. λ a. a.
+
+data Nat : ★ =
+  | zero: Nat
+  | succ: Nat ➔ Nat.
+
+data Vec (A: ★) : Nat ➔ ★ =
+  | vnil: Vec zero
+  | vcons: ∀ n: Nat. A ➔ Vec n ➔ Vec (succ n).
+
+lift-Vec : ∀ n: Nat. Functor ·(λ A: ★. Vec ·A n) =
+  Λ n. Λ A. Λ B. λ f. λ xs. μ map. xs {
+  | vnil ➔ vnil ·B
+  | vcons -n x xs ➔ vcons ·B -n (f x) (map -n xs)
+  }.
+
+Lens : ★ ➔ ★ ➔ ★ =
+  λ S: ★. λ A: ★. ∀ F: ★ ➔ ★. Functor ·F ➔ (A ➔ F ·A) ➔ S ➔ F ·S.
+
+lens : ∀ S: ★. ∀ A: ★. (S ➔ A) ➔ (A ➔ S ➔ S) ➔ Lens ·S ·A =
+  Λ S. Λ A. λ get. λ set. Λ F. λ lift. λ f. λ s. lift ·A ·S (flip set s) (f (get s)).
+
+get : ∀ S: ★. ∀ A: ★. Lens ·S ·A ➔ S ➔ A =
+  Λ S. Λ A. λ l. l (lift-Constant ·A) (id ·A).
+
+over : ∀ S: ★. ∀ A: ★. Lens ·S ·A ➔ (A ➔ A) ➔ S ➔ S =
+  Λ S. Λ A. λ l. λ f. l lift-Identity f.
+
+set : ∀ S: ★. ∀ A: ★. Lens ·S ·A ➔ A ➔ S ➔ S =
+  Λ S. Λ A. λ l. λ x. over l (const x).
+
+data Pair (A: ★) (B: ★) : ★ =
+  | pair: A ➔ B ➔ Pair.
+
+riap : ∀ A: ★. ∀ B: ★. B ➔ A ➔ Pair ·A ·B =
+  Λ A. Λ B. flip (pair ·A ·B).
+
+fst : ∀ A: ★. ∀ B: ★. Lens ·(Pair ·A ·B) ·A =
+  Λ A. Λ B. Λ F. λ lift. λ f. λ p. μ' p {
+  | pair x y ➔ lift (riap ·A ·B y) (f x)
+  }.
+
+snd : ∀ A: ★. ∀ B: ★. Lens ·(Pair ·A ·B) ·B =
+  Λ A. Λ B. Λ F. λ lift. λ f. λ p. μ' p {
+  | pair x y ➔ lift (pair ·A ·B x) (f y)
+  }.
+
+head : ∀ A: ★. ∀ n: Nat. Lens ·(Vec ·A (succ n)) ·A =
+  Λ A. Λ n. Λ F. λ lift. λ f. λ v. μ' v @ λ i: Nat. λ x: Vec ·A i. {i ≃ succ n} ➾ F ·(Vec ·A i) {
+  | vnil ➔ Λ p. δ - p
+  | vcons -n x xs ➔ Λ _. lift (λ y: A. vcons -n y xs) (f x)
+  } -β.
