@@ -1,0 +1,13 @@
+module functor.
+
+Functor : (★ ➔ ★) ➔ ★
+= λ F: ★ ➔ ★. ∀ A: ★. ∀ B: ★. (A ➔ B) ➔ F ·A ➔ F ·B.
+
+lift-func : ∀ A: ★. Functor ·(λ B: ★. A ➔ B)
+= Λ A. Λ B. Λ C. λ f. λ g. λ a. f (g a).
+
+lift-id : Functor ·(λ A: ★. A)
+= Λ A. Λ B. λ f. f.
+
+lift-const : ∀ A: ★. Functor ·(λ B: ★. A)
+= Λ A. Λ B. Λ C. λ f. λ a. a.

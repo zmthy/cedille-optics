@@ -1,0 +1,10 @@
+module util.
+
+id : ∀ A: ★. A ➔ A
+= Λ A. λ a. a.
+
+const : ∀ A: ★. ∀ B: ★. A ➔ B ➔ A
+= Λ A. Λ B. λ a. λ b. a.
+
+flip : ∀ A: ★. ∀ B: ★. ∀ C: ★. (A ➔ B ➔ C) ➔ B ➔ A ➔ C
+= Λ A. Λ B. Λ C. λ f. λ b. λ a. f a b.
