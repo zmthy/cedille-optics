@@ -1,6 +1,7 @@
 module optics.
 
 import data/nat.
+import data/nat-thms.
 import data/sigma.
 import data/vec.
 
@@ -38,5 +39,11 @@ second : ∀ A: ★. ∀ B: ★. ∀ C: ★. Lens ·(Pair ·A ·B) ·(Pair ·A �
 head : ∀ A: ★. ∀ n: Nat. Lens' ·(Vec ·A (succ n)) ·A
 = Λ A. Λ n. Λ F. λ lift. λ f. λ v. μ' v @ λ i: Nat. λ _: Vec ·A i. {i ≃ succ n} ➾ F ·(Vec ·A i) {
   | vnil ➔ Λ p. δ - p
-  | vcons -n x xs ➔ Λ _. lift (λ y: A. vcons -n y xs) (f x)
+  | vcons -i x xs ➔ Λ _. lift (λ y: A. vcons -i y xs) (f x)
+  } -β.
+
+tail : ∀ A: ★. ∀ n: Nat. Lens' ·(Vec ·A (succ n)) ·(Vec ·A n)
+= Λ A. Λ n. Λ F. λ lift. λ f. λ v. μ' v @ λ i: Nat. λ _: Vec ·A i. {i ≃ succ n} ➾ F ·(Vec ·A i) {
+  | vnil ➔ Λ p. δ - p
+  | vcons -i x xs ➔ Λ p. lift (λ ys: Vec ·A i. vcons -i x ys) ((ρ (succInj i n p) - f) xs)
   } -β.
