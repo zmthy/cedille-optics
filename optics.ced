@@ -7,32 +7,35 @@ import data/vec.
 import functor.
 import util.
 
-Lens : ★ ➔ ★ ➔ ★
-= λ S: ★. λ A: ★. ∀ F: ★ ➔ ★. Functor ·F ➔ (A ➔ F ·A) ➔ S ➔ F ·S.
+Lens : ★ ➔ ★ ➔ ★ ➔ ★ ➔ ★
+= λ S: ★. λ T: ★. λ A: ★. λ B: ★. ∀ F: ★ ➔ ★. Functor ·F ➔ (A ➔ F ·B) ➔ S ➔ F ·T.
 
-lens : ∀ S: ★. ∀ A: ★. (S ➔ A) ➔ (A ➔ S ➔ S) ➔ Lens ·S ·A
-= Λ S. Λ A. λ get. λ set. Λ F. λ lift. λ f. λ s. lift ·A ·S (flip set s) (f (get s)).
+Lens' : ★ ➔ ★ ➔ ★
+= λ S: ★. λ A: ★. Lens ·S ·S ·A ·A.
 
-get : ∀ S: ★. ∀ A: ★. Lens ·S ·A ➔ S ➔ A
-= Λ S. Λ A. λ l. l (lift-const ·A) (id ·A).
+lens : ∀ S: ★. ∀ T: ★. ∀ A: ★. ∀ B: ★. (S ➔ A) ➔ (B ➔ S ➔ T) ➔ Lens ·S ·T ·A ·B
+= Λ S. Λ T. Λ A. Λ B. λ get. λ set. Λ F. λ lift. λ f. λ s. lift (flip set s) (f (get s)).
 
-over : ∀ S: ★. ∀ A: ★. Lens ·S ·A ➔ (A ➔ A) ➔ S ➔ S
-= Λ S. Λ A. λ l. λ f. l lift-id f.
+get : ∀ S: ★. ∀ T: ★. ∀ A: ★. ∀ B: ★. Lens ·S ·T ·A ·B ➔ S ➔ A
+= Λ S. Λ T. Λ A. Λ B. λ l. l (lift-const ·A) (id ·A).
 
-set : ∀ S: ★. ∀ A: ★. Lens ·S ·A ➔ A ➔ S ➔ S
-= Λ S. Λ A. λ l. λ x. over l (const x).
+over : ∀ S: ★. ∀ T: ★. ∀ A: ★. ∀ B: ★. Lens ·S ·T ·A ·B ➔ (A ➔ B) ➔ S ➔ T
+= Λ S. Λ T. Λ A. Λ B. λ l. λ f. l lift-id f.
 
-first : ∀ A: ★. ∀ B: ★. Lens ·(Pair ·A ·B) ·A
-= Λ A. Λ B. Λ F. λ lift. λ f. λ p. μ' p {
-  | pair x y ➔ lift ·A ·(Pair ·A ·B) (λ x. pair x y) (f x)
+set : ∀ S: ★. ∀ T: ★. ∀ A: ★. ∀ B: ★. Lens ·S ·T ·A ·B ➔ B ➔ S ➔ T
+= Λ S. Λ T. Λ A. Λ B. λ l. λ x. over l (const x).
+
+first : ∀ A: ★. ∀ B: ★. ∀ C: ★. Lens ·(Pair ·A ·C) ·(Pair ·B ·C) ·A ·B
+= Λ A. Λ B. Λ C. Λ F. λ lift. λ f. λ p. μ' p {
+  | pair x y ➔ lift ·B ·(Pair ·B ·C) (λ x. pair x y) (f x)
   }.
 
-second : ∀ A: ★. ∀ B: ★. Lens ·(Pair ·A ·B) ·B
-= Λ A. Λ B. Λ F. λ lift. λ f. λ p. μ' p {
-  | pair x y ➔ lift ·B ·(Pair ·A ·B) (λ y. pair x y) (f y)
+second : ∀ A: ★. ∀ B: ★. ∀ C: ★. Lens ·(Pair ·A ·B) ·(Pair ·A ·C) ·B ·C
+= Λ A. Λ B. Λ C. Λ F. λ lift. λ f. λ p. μ' p {
+  | pair x y ➔ lift ·C ·(Pair ·A ·C) (λ y. pair x y) (f y)
   }.
 
-head : ∀ A: ★. ∀ n: Nat. Lens ·(Vec ·A (succ n)) ·A
+head : ∀ A: ★. ∀ n: Nat. Lens' ·(Vec ·A (succ n)) ·A
 = Λ A. Λ n. Λ F. λ lift. λ f. λ v. μ' v @ λ i: Nat. λ _: Vec ·A i. {i ≃ succ n} ➾ F ·(Vec ·A i) {
   | vnil ➔ Λ p. δ - p
   | vcons -n x xs ➔ Λ _. lift (λ y: A. vcons -n y xs) (f x)
